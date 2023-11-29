@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +18,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.srtech.dto.UserDetails;
+import com.srtech.dto.UserDetailsDto;
 import com.srtech.dto.UserResponse;
+import com.srtech.dto.UserRespository;
+import com.srtech.entity.UserDetails;
 import com.srtech.exception.InvalidNameException;
 
 @RestController
@@ -26,9 +29,12 @@ import com.srtech.exception.InvalidNameException;
 public class UserController {
 
 	private static Map<Integer, String> usersDataBase = null;
-	private static Map<Integer, UserDetails> userDetailsMap = null;
+	
+	@Autowired
+	private UserRespository userRespository;
 
 	static {
+		System.out.println("Loading the defalt data...");
 		usersDataBase = new HashMap<>();
 		usersDataBase.put(1, "Dean");
 		usersDataBase.put(2, "Robert");
@@ -79,22 +85,26 @@ public class UserController {
 		return userList;
 	}
 
-	@PostMapping(value = "/user", consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/user", consumes = MediaType.APPLICATION_JSON_VALUE,produces =MediaType.APPLICATION_JSON_VALUE )
 	@ResponseBody
-	public ResponseEntity<UserResponse> addUser(@RequestBody UserDetails userDetails) {
+	public ResponseEntity<UserResponse> addUser(@RequestBody UserDetailsDto userDetails) {
 
-		userDetails=null;
 		if (userDetails.getName().contains("%") || userDetails.getName().contains("_")) {
 			throw new InvalidNameException("Found name is "+userDetails.getName() +" It has invalid characters. Please use the correct name and retry!!");
 		}
-		Integer maxId = usersDataBase.entrySet().stream().map(entry -> entry.getKey()).max((o1, o2) -> o1.compareTo(o2))
-				.get();
-
-		usersDataBase.put(maxId + 1, userDetails.getName());
-		//Response Model
+		
+		//Creting user entiry object
+		UserDetails userEntity=new UserDetails();
+		userEntity.setEmail(userDetails.getEmail());
+		userEntity.setName(userDetails.getName());
+		
+		//Save in database
+		userEntity= userRespository.save(userEntity);
+		
+		//Create Response Object
 		UserResponse userResponse = new UserResponse();
 		userResponse.setSuccess(true);
-		userResponse.setMessage("User added to DB successfully..");
+		userResponse.setMessage("User added to DB successfully with ID "+userEntity.getId());
 		return new ResponseEntity<>(userResponse, HttpStatus.CREATED);
 	}
 
