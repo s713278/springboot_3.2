@@ -1,5 +1,6 @@
 package com.srtech.controller;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.srtech.dto.UserDTO;
+import com.srtech.dto.UserRepository2;
 import com.srtech.dto.UserResponse;
 import com.srtech.dto.UserRespository;
 import com.srtech.entity.UserEntity;
@@ -36,6 +38,9 @@ public class UserController {
 	
 	@Autowired
 	private UserRespository userRespository;
+	
+	@Autowired 
+	private UserRepository2 userRepository2;
 
 	static {
 		System.out.println("Loading the defalt data...");
@@ -146,5 +151,36 @@ public class UserController {
 
 	// In case you find the data: Status codes should be -- 200
 	// In case you dont find the data: Status codes should be -- 404
-
+	
+	
+	@GetMapping("/user/list/{birthYear}")
+	public List<UserDTO> getUsersByBirthYears(@PathVariable String birthYear) {
+		// Transforming the map to list of strings
+		log.debug("Retriving users search results for matched birth year :{}",birthYear);
+		List<UserEntity> userEntities= userRespository.findByYearOfBirth(birthYear);
+		
+		List<UserDTO> responseList = new ArrayList<>();
+		UserDTO userDTO = null;
+		for(UserEntity userEntity:userEntities) {
+			userDTO=new UserDTO(
+					userEntity.getName(),
+					userEntity.getEmail(),
+					userEntity.getYearOfBirth()
+					);
+			responseList.add(userDTO);
+		}
+		
+		
+		//TODO: Dean ,Return 404 status code  if no search results found for a given birth year.
+		return responseList;
+		/*userEntities.stream()
+				.map(userEntity -> new UserDTO(
+							userEntity.getName(),
+							userEntity.getEmail(),
+							userEntity.getYearOfBirth()
+							)
+				).collect(Collectors.toList());
+				*/
+	}
+	
 }

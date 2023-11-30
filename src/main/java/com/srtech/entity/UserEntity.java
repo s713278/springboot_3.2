@@ -28,4 +28,5 @@ public class UserEntity {
 	@Column(name="YEAR_OF_BIRTH")
 	private String yearOfBirth;
 	
+	
 }
