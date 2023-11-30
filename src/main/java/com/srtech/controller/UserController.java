@@ -3,6 +3,7 @@ package com.srtech.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +19,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.srtech.dto.UserDetailsDto;
+import com.srtech.dto.UserDTO;
 import com.srtech.dto.UserResponse;
 import com.srtech.dto.UserRespository;
-import com.srtech.entity.UserDetails;
+import com.srtech.entity.UserEntity;
 import com.srtech.exception.InvalidNameException;
+
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api")
+@Slf4j
 public class UserController {
 
 	private static Map<Integer, String> usersDataBase = null;
@@ -50,8 +54,32 @@ public class UserController {
 
 	// http://localhost:8080/api/user?id=1
 	@GetMapping("/user")
-	public String getUserDetails(@RequestParam Integer id) {
-		return usersDataBase.get(id);
+	public UserResponse getUserDetails(@RequestParam Integer id) {
+		
+		//DB Lookup
+		Optional<UserEntity> optionalEntiry= userRespository.findById(id);
+		if(!optionalEntiry.isPresent()) {
+			throw new RuntimeException("No user foudn for the given id "+id);
+		}
+		
+		//Its UserResponse wrapper
+		UserResponse response = new UserResponse();
+		
+		//GEt User entity object
+		UserEntity userEntity= optionalEntiry.get();
+		log.debug("User Entity : {}",userEntity);
+		
+		//Its DTO for creating ther response payload
+		UserDTO userDTO=new UserDTO();
+		userDTO.setEmail(userEntity.getName());
+		userDTO.setName(userEntity.getName());
+		userDTO.setYearOfBirth(userEntity.getYearOfBirth());
+		
+		response.setSuccess(true);
+		response.setMessage("User retrival is success!!");
+		response.setData(userDTO);
+		
+		return response;
 	}
 
 	// http://localhost:8080/api/user1?userId=1
@@ -87,24 +115,29 @@ public class UserController {
 
 	@PostMapping(value = "/user", consumes = MediaType.APPLICATION_JSON_VALUE,produces =MediaType.APPLICATION_JSON_VALUE )
 	@ResponseBody
-	public ResponseEntity<UserResponse> addUser(@RequestBody UserDetailsDto userDetails) {
+	public ResponseEntity<UserResponse> addUser(@RequestBody UserDTO userDTO) {
 
-		if (userDetails.getName().contains("%") || userDetails.getName().contains("_")) {
-			throw new InvalidNameException("Found name is "+userDetails.getName() +" It has invalid characters. Please use the correct name and retry!!");
+		if (userDTO.getName().contains("%") || userDTO.getName().contains("_")) {
+			throw new InvalidNameException("Found name is "+userDTO.getName() +" It has invalid characters. Please use the correct name and retry!!");
+		}
+		if (userDTO.getEmail().isBlank()) {
+			throw new InvalidNameException("Email is required.");
 		}
 		
-		//Creting user entiry object
-		UserDetails userEntity=new UserDetails();
-		userEntity.setEmail(userDetails.getEmail());
-		userEntity.setName(userDetails.getName());
+		//Creating user entiry object
+		UserEntity userEntity=new UserEntity(); //Detached State
+		
+		userEntity.setEmail(userDTO.getEmail());
+		userEntity.setName(userDTO.getName());
+		userEntity.setYearOfBirth(userDTO.getYearOfBirth());
 		
 		//Save in database
-		userEntity= userRespository.save(userEntity);
+		UserEntity userEntity2= userRespository.save(userEntity); //Attached State
 		
 		//Create Response Object
 		UserResponse userResponse = new UserResponse();
 		userResponse.setSuccess(true);
-		userResponse.setMessage("User added to DB successfully with ID "+userEntity.getId());
+		userResponse.setMessage("User is created in DB successfully with ID: "+userEntity2.getId());
 		return new ResponseEntity<>(userResponse, HttpStatus.CREATED);
 	}
 

@@ -12,7 +12,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name="USER_DETAILS") //Optional
-public class UserDetails {
+public class UserEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
@@ -24,5 +24,8 @@ public class UserDetails {
 	
 	@Column
 	private String email;
+	
+	@Column(name="YEAR_OF_BIRTH")
+	private String yearOfBirth;
 	
 }
