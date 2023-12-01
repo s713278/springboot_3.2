@@ -8,6 +8,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +24,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.srtech.dto.UserDTO;
-import com.srtech.dto.UserRepository2;
 import com.srtech.dto.UserResponse;
 import com.srtech.dto.UserRespository;
 import com.srtech.entity.UserEntity;
 import com.srtech.exception.InvalidNameException;
+import com.srtech.repository.PagingAndSortingUserRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,7 +43,7 @@ public class UserController {
 	private UserRespository userRespository;
 	
 	@Autowired 
-	private UserRepository2 userRepository2;
+	private PagingAndSortingUserRepository pagingAndSortingUserRepository;
 
 	static {
 		System.out.println("Loading the defalt data...");
@@ -182,5 +185,28 @@ public class UserController {
 				).collect(Collectors.toList());
 				*/
 	}
+	
+	//Get the user_entity info page wise
+	@GetMapping("/user/pagination/{pageNo}")
+	public Page getUsersByPageNo(@PathVariable Integer pageNo) {
+		
+		//Creating the Pageble Request with pageNo & no of records per page.
+		Pageable pageRequest= PageRequest.of(pageNo, 10);
+
+		Page page=  pagingAndSortingUserRepository.findAll(pageRequest);
+		
+		log.debug("page no of elements :{}",page.getNumberOfElements());
+		log.debug("Total No Of Pages :{}",page.getTotalPages());
+		log.debug("Page Content :{}",page.getContent());
+		
+		List pageResult= page.getContent();
+		
+		return  page;
+	}
+	
+	
+	
+	
+	
 	
 }

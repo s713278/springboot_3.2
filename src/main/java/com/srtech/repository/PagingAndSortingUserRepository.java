@@ -1,4 +1,4 @@
-package com.srtech.dto;
+package com.srtech.repository;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.srtech.entity.UserEntity;
 
 @Repository
-public interface UserRepository2 extends PagingAndSortingRepository<UserEntity, Integer> {
+public interface PagingAndSortingUserRepository extends PagingAndSortingRepository<UserEntity, Integer> {
 
 }
