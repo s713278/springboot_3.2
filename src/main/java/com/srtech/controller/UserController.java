@@ -205,7 +205,10 @@ public class UserController {
 	}
 	
 	
-	
+	//TODO: Write a new end point to fetch the details from database for a give nemail id.
+	//If email doent have @ or . ,Stop process the reuest and throw exception
+	//Service should ignore case sensitive
+	//If any email has multiple records ,Return all
 	
 	
 	
