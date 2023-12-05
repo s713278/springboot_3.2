@@ -1,5 +1,7 @@
 package com.srtech.dto;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
@@ -17,14 +19,11 @@ public class UserDTO {
 	@JsonProperty("year_of_birth")
 	private String yearOfBirth;
 	
+
+	List<AddressDTO> address;
+
 	public UserDTO() {
 		
 	}
-
-	/*
-	 * public UserDTO(String name, String email, String yearOfBirth) { super();
-	 * this.name = name; this.email = email; this.yearOfBirth = yearOfBirth; }
-	 */
-	
 	
 }
