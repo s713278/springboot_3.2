@@ -8,6 +8,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +30,7 @@ import com.srtech.dto.UserRespository;
 import com.srtech.entity.AddressEntity;
 import com.srtech.entity.UserEntity;
 import com.srtech.exception.InvalidNameException;
+import com.srtech.repository.PagingAndSortingUserRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,6 +43,9 @@ public class UserController {
 	
 	@Autowired
 	private UserRespository userRespository;
+	
+	@Autowired 
+	private PagingAndSortingUserRepository pagingAndSortingUserRepository;
 
 	static {
 		System.out.println("Loading the defalt data...");
@@ -165,5 +172,62 @@ public class UserController {
 
 	// In case you find the data: Status codes should be -- 200
 	// In case you dont find the data: Status codes should be -- 404
+	
+	
+	@GetMapping("/user/list/{birthYear}")
+	public List<UserDTO> getUsersByBirthYears(@PathVariable String birthYear) {
+		// Transforming the map to list of strings
+		log.debug("Retriving users search results for matched birth year :{}",birthYear);
+		List<UserEntity> userEntities= userRespository.findByYearOfBirth(birthYear);
+		
+		List<UserDTO> responseList = new ArrayList<>();
+		UserDTO userDTO = null;
+		for(UserEntity userEntity:userEntities) {
+			userDTO=new UserDTO(
+					userEntity.getName(),
+					userEntity.getEmail(),
+					userEntity.getYearOfBirth()
+					);
+			responseList.add(userDTO);
+		}
+		
+		
+		//TODO: Dean ,Return 404 status code  if no search results found for a given birth year.
+		return responseList;
+		/*userEntities.stream()
+				.map(userEntity -> new UserDTO(
+							userEntity.getName(),
+							userEntity.getEmail(),
+							userEntity.getYearOfBirth()
+							)
+				).collect(Collectors.toList());
+				*/
+	}
+	
+	//Get the user_entity info page wise
+	@GetMapping("/user/pagination/{pageNo}")
+	public Page getUsersByPageNo(@PathVariable Integer pageNo) {
+		
+		//Creating the Pageble Request with pageNo & no of records per page.
+		Pageable pageRequest= PageRequest.of(pageNo, 10);
 
+		Page page=  pagingAndSortingUserRepository.findAll(pageRequest);
+		
+		log.debug("page no of elements :{}",page.getNumberOfElements());
+		log.debug("Total No Of Pages :{}",page.getTotalPages());
+		log.debug("Page Content :{}",page.getContent());
+		
+		List pageResult= page.getContent();
+		
+		return  page;
+	}
+	
+	
+	//TODO: Write a new end point to fetch the details from database for a give nemail id.
+	//If email doent have @ or . ,Stop process the reuest and throw exception
+	//Service should ignore case sensitive
+	//If any email has multiple records ,Return all
+	
+	
+	
 }
