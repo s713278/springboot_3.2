@@ -151,8 +151,9 @@ public class UserController {
 				addressEntity.setAddressLine(addressDTOs.get(i).getAddressLine());
 				addressEntity.setState(addressDTOs.get(i).getState());
 				addressEntity.setZipCode(addressDTOs.get(i).getZipCode());
+				addressEntities.add(addressEntity);
 			}
-			addressEntities.add(addressEntity);
+			
 		}
 		//Set to User entity
 		userEntity.setAddresses(addressEntities);
@@ -186,7 +187,7 @@ public class UserController {
 			userDTO=new UserDTO(
 					userEntity.getName(),
 					userEntity.getEmail(),
-					userEntity.getYearOfBirth()
+					userEntity.getYearOfBirth(), null
 					);
 			responseList.add(userDTO);
 		}

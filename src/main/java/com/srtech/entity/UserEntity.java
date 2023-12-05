@@ -2,6 +2,7 @@ package com.srtech.entity;
 
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -32,7 +33,7 @@ public class UserEntity {
 	@Column(name="YEAR_OF_BIRTH")
 	private String yearOfBirth;
 
-	@OneToMany
+	@OneToMany(cascade = CascadeType.ALL)
 	@JoinColumn(name = "user_id")
 	private List<AddressEntity> addresses;
 }
