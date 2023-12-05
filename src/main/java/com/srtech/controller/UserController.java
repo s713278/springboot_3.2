@@ -1,5 +1,6 @@
 package com.srtech.controller;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,9 +20,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.srtech.dto.AddressDTO;
 import com.srtech.dto.UserDTO;
 import com.srtech.dto.UserResponse;
 import com.srtech.dto.UserRespository;
+import com.srtech.entity.AddressEntity;
 import com.srtech.entity.UserEntity;
 import com.srtech.exception.InvalidNameException;
 
@@ -130,6 +133,22 @@ public class UserController {
 		userEntity.setEmail(userDTO.getEmail());
 		userEntity.setName(userDTO.getName());
 		userEntity.setYearOfBirth(userDTO.getYearOfBirth());
+		List<AddressDTO> addressDTOs= userDTO.getAddress();
+		
+		List<AddressEntity> addressEntities = new ArrayList<>();
+		AddressEntity addressEntity=null;
+		//Converting to AddressEntity from AddressDTO
+		if(addressDTOs!=null && addressDTOs.size()>0) {
+			for(int i=0;i<addressDTOs.size();i++) {
+				addressEntity=new AddressEntity();
+				addressEntity.setAddressLine(addressDTOs.get(i).getAddressLine());
+				addressEntity.setState(addressDTOs.get(i).getState());
+				addressEntity.setZipCode(addressDTOs.get(i).getZipCode());
+			}
+			addressEntities.add(addressEntity);
+		}
+		//Set to User entity
+		userEntity.setAddresses(addressEntities);
 		
 		//Save in database
 		UserEntity userEntity2= userRespository.save(userEntity); //Attached State

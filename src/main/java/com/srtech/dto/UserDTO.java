@@ -1,5 +1,7 @@
 package com.srtech.dto;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Data;
@@ -14,5 +16,7 @@ public class UserDTO {
 	//@JsonAlias("year_of_birth")
 	@JsonProperty("year_of_birth")
 	private String yearOfBirth;
+	
+	List<AddressDTO> address;
 	
 }
