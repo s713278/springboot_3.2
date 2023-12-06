@@ -12,11 +12,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -104,6 +107,7 @@ public class UserController {
 		return usersDataBase.get(id);
 	}
 
+	//TODO: Retrieve all the users with addresses
 	@GetMapping("/user/all")
 	public List<String> getUsers() {
 		// Transforming the map to list of strings
@@ -184,25 +188,23 @@ public class UserController {
 		List<UserDTO> responseList = new ArrayList<>();
 		UserDTO userDTO = null;
 		for(UserEntity userEntity:userEntities) {
+			
+			List<AddressDTO> addressesList=
+			userEntity.getAddresses()
+			.stream()
+			.map(addressEntity -> new AddressDTO(addressEntity.getAddressLine(),addressEntity.getState(),addressEntity.getZipCode()))
+			.collect(Collectors.toList());
+			
 			userDTO=new UserDTO(
 					userEntity.getName(),
 					userEntity.getEmail(),
-					userEntity.getYearOfBirth(), null
+					userEntity.getYearOfBirth(), 
+					addressesList
 					);
 			responseList.add(userDTO);
 		}
-		
-		
 		//TODO: Dean ,Return 404 status code  if no search results found for a given birth year.
 		return responseList;
-		/*userEntities.stream()
-				.map(userEntity -> new UserDTO(
-							userEntity.getName(),
-							userEntity.getEmail(),
-							userEntity.getYearOfBirth()
-							)
-				).collect(Collectors.toList());
-				*/
 	}
 	
 	//Get the user_entity info page wise
@@ -223,6 +225,13 @@ public class UserController {
 		return  page;
 	}
 	
+	@DeleteMapping("/user/delete/{userId}")
+	public ResponseEntity<Void> deleteUser(@PathVariable Integer userId) {
+		log.debug("Retriving users search results for matched birth year :{}",userId);
+		userRespository.deleteById(userId);
+		return new ResponseEntity<Void>(HttpStatus.OK);
+			//return  ResponseEntity.BodyBuilder.ok();
+	}
 	
 	//TODO: Write a new end point to fetch the details from database for a give nemail id.
 	//If email doent have @ or . ,Stop process the reuest and throw exception
