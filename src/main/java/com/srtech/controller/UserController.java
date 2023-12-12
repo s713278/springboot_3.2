@@ -1,6 +1,7 @@
 package com.srtech.controller;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.srtech.dto.AddressDTO;
+import com.srtech.dto.CurrencyRequest;
+import com.srtech.dto.CurrencyResponse;
 import com.srtech.dto.UserDTO;
 import com.srtech.dto.UserResponse;
 import com.srtech.dto.UserRespository;
@@ -34,6 +37,7 @@ import com.srtech.entity.AddressEntity;
 import com.srtech.entity.UserEntity;
 import com.srtech.exception.InvalidNameException;
 import com.srtech.repository.PagingAndSortingUserRepository;
+import com.srtech.service.CurrencyConverterClient;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,11 +47,11 @@ import lombok.extern.slf4j.Slf4j;
 public class UserController {
 
 	private static Map<Integer, String> usersDataBase = null;
-	
+
 	@Autowired
 	private UserRespository userRespository;
-	
-	@Autowired 
+
+	@Autowired
 	private PagingAndSortingUserRepository pagingAndSortingUserRepository;
 
 	static {
@@ -68,30 +72,30 @@ public class UserController {
 	// http://localhost:8080/api/user?id=1
 	@GetMapping("/user")
 	public UserResponse getUserDetails(@RequestParam Integer id) {
-		
-		//DB Lookup
-		Optional<UserEntity> optionalEntiry= userRespository.findById(id);
-		if(!optionalEntiry.isPresent()) {
-			throw new RuntimeException("No user foudn for the given id "+id);
+
+		// DB Lookup
+		Optional<UserEntity> optionalEntiry = userRespository.findById(id);
+		if (!optionalEntiry.isPresent()) {
+			throw new RuntimeException("No user foudn for the given id " + id);
 		}
-		
-		//Its UserResponse wrapper
+
+		// Its UserResponse wrapper
 		UserResponse response = new UserResponse();
-		
-		//GEt User entity object
-		UserEntity userEntity= optionalEntiry.get();
-		log.debug("User Entity : {}",userEntity);
-		
-		//Its DTO for creating ther response payload
-		UserDTO userDTO=new UserDTO();
+
+		// GEt User entity object
+		UserEntity userEntity = optionalEntiry.get();
+		log.debug("User Entity : {}", userEntity);
+
+		// Its DTO for creating ther response payload
+		UserDTO userDTO = new UserDTO();
 		userDTO.setEmail(userEntity.getName());
 		userDTO.setName(userEntity.getName());
 		userDTO.setYearOfBirth(userEntity.getYearOfBirth());
-		
+
 		response.setSuccess(true);
 		response.setMessage("User retrival is success!!");
 		response.setData(userDTO);
-		
+
 		return response;
 	}
 
@@ -107,7 +111,7 @@ public class UserController {
 		return usersDataBase.get(id);
 	}
 
-	//TODO: Retrieve all the users with addresses
+	// TODO: Retrieve all the users with addresses
 	@GetMapping("/user/all")
 	public List<String> getUsers() {
 		// Transforming the map to list of strings
@@ -127,48 +131,49 @@ public class UserController {
 		return userList;
 	}
 
-	@PostMapping(value = "/user", consumes = MediaType.APPLICATION_JSON_VALUE,produces =MediaType.APPLICATION_JSON_VALUE )
+	@PostMapping(value = "/user", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public ResponseEntity<UserResponse> addUser(@RequestBody UserDTO userDTO) {
 
 		if (userDTO.getName().contains("%") || userDTO.getName().contains("_")) {
-			throw new InvalidNameException("Found name is "+userDTO.getName() +" It has invalid characters. Please use the correct name and retry!!");
+			throw new InvalidNameException("Found name is " + userDTO.getName()
+					+ " It has invalid characters. Please use the correct name and retry!!");
 		}
 		if (userDTO.getEmail().isBlank()) {
 			throw new InvalidNameException("Email is required.");
 		}
-		
-		//Creating user entiry object
-		UserEntity userEntity=new UserEntity(); //Detached State
-		
+
+		// Creating user entiry object
+		UserEntity userEntity = new UserEntity(); // Detached State
+
 		userEntity.setEmail(userDTO.getEmail());
 		userEntity.setName(userDTO.getName());
 		userEntity.setYearOfBirth(userDTO.getYearOfBirth());
-		List<AddressDTO> addressDTOs= userDTO.getAddress();
-		
+		List<AddressDTO> addressDTOs = userDTO.getAddress();
+
 		List<AddressEntity> addressEntities = new ArrayList<>();
-		AddressEntity addressEntity=null;
-		//Converting to AddressEntity from AddressDTO
-		if(addressDTOs!=null && addressDTOs.size()>0) {
-			for(int i=0;i<addressDTOs.size();i++) {
-				addressEntity=new AddressEntity();
+		AddressEntity addressEntity = null;
+		// Converting to AddressEntity from AddressDTO
+		if (addressDTOs != null && addressDTOs.size() > 0) {
+			for (int i = 0; i < addressDTOs.size(); i++) {
+				addressEntity = new AddressEntity();
 				addressEntity.setAddressLine(addressDTOs.get(i).getAddressLine());
 				addressEntity.setState(addressDTOs.get(i).getState());
 				addressEntity.setZipCode(addressDTOs.get(i).getZipCode());
 				addressEntities.add(addressEntity);
 			}
-			
+
 		}
-		//Set to User entity
+		// Set to User entity
 		userEntity.setAddresses(addressEntities);
-		
-		//Save in database
-		UserEntity userEntity2= userRespository.save(userEntity); //Attached State
-		
-		//Create Response Object
+
+		// Save in database
+		UserEntity userEntity2 = userRespository.save(userEntity); // Attached State
+
+		// Create Response Object
 		UserResponse userResponse = new UserResponse();
 		userResponse.setSuccess(true);
-		userResponse.setMessage("User is created in DB successfully with ID: "+userEntity2.getId());
+		userResponse.setMessage("User is created in DB successfully with ID: " + userEntity2.getId());
 		return new ResponseEntity<>(userResponse, HttpStatus.CREATED);
 	}
 
@@ -177,67 +182,69 @@ public class UserController {
 
 	// In case you find the data: Status codes should be -- 200
 	// In case you dont find the data: Status codes should be -- 404
-	
-	
+
 	@GetMapping("/user/list/{birthYear}")
 	public List<UserDTO> getUsersByBirthYears(@PathVariable String birthYear) {
 		// Transforming the map to list of strings
-		log.debug("Retriving users search results for matched birth year :{}",birthYear);
-		List<UserEntity> userEntities= userRespository.findByYearOfBirth(birthYear);
-		
+		log.debug("Retriving users search results for matched birth year :{}", birthYear);
+		List<UserEntity> userEntities = userRespository.findByYearOfBirth(birthYear);
+
 		List<UserDTO> responseList = new ArrayList<>();
 		UserDTO userDTO = null;
-		for(UserEntity userEntity:userEntities) {
-			
-			List<AddressDTO> addressesList=
-			userEntity.getAddresses()
-			.stream()
-			.map(addressEntity -> new AddressDTO(addressEntity.getAddressLine(),addressEntity.getState(),addressEntity.getZipCode()))
-			.collect(Collectors.toList());
-			
-			userDTO=new UserDTO(
-					userEntity.getName(),
-					userEntity.getEmail(),
-					userEntity.getYearOfBirth(), 
-					addressesList
-					);
+		for (UserEntity userEntity : userEntities) {
+
+			List<AddressDTO> addressesList = userEntity.getAddresses().stream()
+					.map(addressEntity -> new AddressDTO(addressEntity.getAddressLine(), addressEntity.getState(),
+							addressEntity.getZipCode()))
+					.collect(Collectors.toList());
+
+			userDTO = new UserDTO(userEntity.getName(), userEntity.getEmail(), userEntity.getYearOfBirth(),
+					addressesList);
 			responseList.add(userDTO);
 		}
-		//TODO: Dean ,Return 404 status code  if no search results found for a given birth year.
+		// TODO: Dean ,Return 404 status code if no search results found for a given
+		// birth year.
 		return responseList;
 	}
-	
-	//Get the user_entity info page wise
+
+	// Get the user_entity info page wise
 	@GetMapping("/user/pagination/{pageNo}")
 	public Page getUsersByPageNo(@PathVariable Integer pageNo) {
-		
-		//Creating the Pageble Request with pageNo & no of records per page.
-		Pageable pageRequest= PageRequest.of(pageNo, 10);
 
-		Page page=  pagingAndSortingUserRepository.findAll(pageRequest);
-		
-		log.debug("page no of elements :{}",page.getNumberOfElements());
-		log.debug("Total No Of Pages :{}",page.getTotalPages());
-		log.debug("Page Content :{}",page.getContent());
-		
-		List pageResult= page.getContent();
-		
-		return  page;
+		// Creating the Pageble Request with pageNo & no of records per page.
+		Pageable pageRequest = PageRequest.of(pageNo, 10);
+
+		Page page = pagingAndSortingUserRepository.findAll(pageRequest);
+
+		log.debug("page no of elements :{}", page.getNumberOfElements());
+		log.debug("Total No Of Pages :{}", page.getTotalPages());
+		log.debug("Page Content :{}", page.getContent());
+
+		List pageResult = page.getContent();
+
+		return page;
 	}
-	
+
 	@DeleteMapping("/user/delete/{userId}")
 	public ResponseEntity<Void> deleteUser(@PathVariable Integer userId) {
-		log.debug("Retriving users search results for matched birth year :{}",userId);
+		log.debug("Retriving users search results for matched birth year :{}", userId);
 		userRespository.deleteById(userId);
 		return new ResponseEntity<Void>(HttpStatus.OK);
-			//return  ResponseEntity.BodyBuilder.ok();
+		// return ResponseEntity.BodyBuilder.ok();
 	}
-	
-	//TODO: Write a new end point to fetch the details from database for a give nemail id.
-	//If email doent have @ or . ,Stop process the reuest and throw exception
-	//Service should ignore case sensitive
-	//If any email has multiple records ,Return all
-	
-	
-	
+
+	// TODO: Write a new end point to fetch the details from database for a give
+	// nemail id.
+	// If email doent have @ or . ,Stop process the reuest and throw exception
+	// Service should ignore case sensitive
+	// If any email has multiple records ,Return all
+	@PostMapping("user/currency/convert")
+	public ResponseEntity<CurrencyResponse> convert(@RequestBody CurrencyRequest currencyRequest) {
+		ResponseEntity<CurrencyResponse> response= currencyConverterClient.convertCurrency(currencyRequest);
+		return response;
+	}
+
+	@Autowired
+	private CurrencyConverterClient currencyConverterClient;
+
 }
